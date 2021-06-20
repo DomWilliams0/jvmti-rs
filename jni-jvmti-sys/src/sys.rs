@@ -24,8 +24,8 @@ impl<Storage> __BindgenBitfieldUnit<Storage> {
 }
 
 impl<Storage> __BindgenBitfieldUnit<Storage>
-    where
-        Storage: AsRef<[u8]> + AsMut<[u8]>,
+where
+    Storage: AsRef<[u8]> + AsMut<[u8]>,
 {
     #[inline]
     pub fn get_bit(&self, index: usize) -> bool {
@@ -471,9 +471,9 @@ pub type jvmtiObjectReferenceCallback = ::core::option::Option<
     ) -> jvmtiIterationControl,
 >;
 pub type jvmtiExtensionFunction =
-::core::option::Option<unsafe extern "C" fn(jvmti_env: *mut jvmtiEnv, ...) -> jvmtiError>;
+    ::core::option::Option<unsafe extern "C" fn(jvmti_env: *mut jvmtiEnv, ...) -> jvmtiError>;
 pub type jvmtiExtensionEvent =
-::core::option::Option<unsafe extern "C" fn(jvmti_env: *mut jvmtiEnv, ...)>;
+    ::core::option::Option<unsafe extern "C" fn(jvmti_env: *mut jvmtiEnv, ...)>;
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
@@ -1509,7 +1509,7 @@ pub type jvmtiEventCompiledMethodUnload = ::core::option::Option<
     ),
 >;
 pub type jvmtiEventDataDumpRequest =
-::core::option::Option<unsafe extern "C" fn(jvmti_env: *mut jvmtiEnv)>;
+    ::core::option::Option<unsafe extern "C" fn(jvmti_env: *mut jvmtiEnv)>;
 pub type jvmtiEventDynamicCodeGenerated = ::core::option::Option<
     unsafe extern "C" fn(
         jvmti_env: *mut jvmtiEnv,
@@ -1576,9 +1576,9 @@ pub type jvmtiEventFramePop = ::core::option::Option<
     ),
 >;
 pub type jvmtiEventGarbageCollectionFinish =
-::core::option::Option<unsafe extern "C" fn(jvmti_env: *mut jvmtiEnv)>;
+    ::core::option::Option<unsafe extern "C" fn(jvmti_env: *mut jvmtiEnv)>;
 pub type jvmtiEventGarbageCollectionStart =
-::core::option::Option<unsafe extern "C" fn(jvmti_env: *mut jvmtiEnv)>;
+    ::core::option::Option<unsafe extern "C" fn(jvmti_env: *mut jvmtiEnv)>;
 pub type jvmtiEventMethodEntry = ::core::option::Option<
     unsafe extern "C" fn(
         jvmti_env: *mut jvmtiEnv,
@@ -1642,7 +1642,7 @@ pub type jvmtiEventNativeMethodBind = ::core::option::Option<
     ),
 >;
 pub type jvmtiEventObjectFree =
-::core::option::Option<unsafe extern "C" fn(jvmti_env: *mut jvmtiEnv, tag: jlong)>;
+    ::core::option::Option<unsafe extern "C" fn(jvmti_env: *mut jvmtiEnv, tag: jlong)>;
 pub type jvmtiEventResourceExhausted = ::core::option::Option<
     unsafe extern "C" fn(
         jvmti_env: *mut jvmtiEnv,
@@ -1678,7 +1678,7 @@ pub type jvmtiEventThreadStart = ::core::option::Option<
     unsafe extern "C" fn(jvmti_env: *mut jvmtiEnv, jni_env: *mut JNIEnv, thread: jthread),
 >;
 pub type jvmtiEventVMDeath =
-::core::option::Option<unsafe extern "C" fn(jvmti_env: *mut jvmtiEnv, jni_env: *mut JNIEnv)>;
+    ::core::option::Option<unsafe extern "C" fn(jvmti_env: *mut jvmtiEnv, jni_env: *mut JNIEnv)>;
 pub type jvmtiEventVMInit = ::core::option::Option<
     unsafe extern "C" fn(jvmti_env: *mut jvmtiEnv, jni_env: *mut JNIEnv, thread: jthread),
 >;
@@ -1693,7 +1693,7 @@ pub type jvmtiEventVMObjectAlloc = ::core::option::Option<
     ),
 >;
 pub type jvmtiEventVMStart =
-::core::option::Option<unsafe extern "C" fn(jvmti_env: *mut jvmtiEnv, jni_env: *mut JNIEnv)>;
+    ::core::option::Option<unsafe extern "C" fn(jvmti_env: *mut jvmtiEnv, jni_env: *mut JNIEnv)>;
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
@@ -2421,7 +2421,7 @@ pub struct jvmtiInterface_1_ {
         unsafe extern "C" fn(env: *mut jvmtiEnv, object: jobject, tag: jlong) -> jvmtiError,
     >,
     pub ForceGarbageCollection:
-    ::core::option::Option<unsafe extern "C" fn(env: *mut jvmtiEnv) -> jvmtiError>,
+        ::core::option::Option<unsafe extern "C" fn(env: *mut jvmtiEnv) -> jvmtiError>,
     pub IterateOverObjectsReachableFromObject: ::core::option::Option<
         unsafe extern "C" fn(
             env: *mut jvmtiEnv,
@@ -2533,7 +2533,7 @@ pub struct jvmtiInterface_1_ {
         ) -> jvmtiError,
     >,
     pub DisposeEnvironment:
-    ::core::option::Option<unsafe extern "C" fn(env: *mut jvmtiEnv) -> jvmtiError>,
+        ::core::option::Option<unsafe extern "C" fn(env: *mut jvmtiEnv) -> jvmtiError>,
     pub GetErrorName: ::core::option::Option<
         unsafe extern "C" fn(
             env: *mut jvmtiEnv,
