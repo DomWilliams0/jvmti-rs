@@ -93,6 +93,23 @@ where
     }
 }
 
+pub const JVMTI_VERSION_1: _bindgen_ty_1 = _bindgen_ty_1::JVMTI_VERSION_1;
+pub const JVMTI_VERSION_1_0: _bindgen_ty_1 = _bindgen_ty_1::JVMTI_VERSION_1;
+pub const JVMTI_VERSION_1_1: _bindgen_ty_1 = _bindgen_ty_1::JVMTI_VERSION_1_1;
+pub const JVMTI_VERSION_1_2: _bindgen_ty_1 = _bindgen_ty_1::JVMTI_VERSION_1_2;
+pub const JVMTI_VERSION_9: _bindgen_ty_1 = _bindgen_ty_1::JVMTI_VERSION_9;
+pub const JVMTI_VERSION_11: _bindgen_ty_1 = _bindgen_ty_1::JVMTI_VERSION_11;
+pub const JVMTI_VERSION: _bindgen_ty_1 = _bindgen_ty_1::JVMTI_VERSION_11;
+#[repr(u32)]
+#[derive(Debug, Copy, Clone, Hash, PartialEq, Eq)]
+pub enum _bindgen_ty_1 {
+    JVMTI_VERSION_1 = 805371904,
+    JVMTI_VERSION_1_1 = 805372160,
+    JVMTI_VERSION_1_2 = 805372416,
+    JVMTI_VERSION_9 = 805896192,
+    JVMTI_VERSION_11 = 806027264,
+}
+
 pub type jvmtiEnv = *const jvmtiInterface_1_;
 pub type jthread = jobject;
 pub type jthreadGroup = jobject;
