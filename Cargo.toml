@@ -1,0 +1,9 @@
+[package]
+name = "jni-jvmti-sys"
+version = "0.3.0" # kept in sync with jni-sys
+authors = ["Dom Williams <me@domwillia.ms>"]
+description = "Rust definitions for types defined in jvmti.h, reusing JNI types exported by jni-sys"
+edition = "2018"
+
+[dependencies]
+jni-sys = "0.3"
