@@ -6,7 +6,7 @@ bindgen jvmti.h -o src/sys.rs --use-core --raw-line "use jni_sys::*;"
  --blacklist-type "JNI.*" --blacklist-type "jni.*"
  */
 
-#![allow(non_snake_case, non_camel_case_types)]
+#![allow(non_snake_case, non_camel_case_types, clippy::all)]
 
 use jni_sys::*;
 
