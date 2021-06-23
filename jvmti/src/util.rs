@@ -48,6 +48,7 @@ macro_rules! jvmti_method {
                     .ok_or(Error::NullFunction(stringify!($name)))?;
 
                 log::trace!("calling jvmti function {}", stringify!($name));
+                #[allow(unused_unsafe)]
                 let ret = unsafe {
                     fn_ptr($jvmti.as_ptr(), $($args),*)
                 };

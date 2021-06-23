@@ -6,6 +6,7 @@ mod util;
 
 mod env;
 mod event;
+mod memory;
 
 pub use env::JvmtiEnv;
 pub use event::{EventCallbacks, EventCallbacksBuilder, EventScope, EventType};

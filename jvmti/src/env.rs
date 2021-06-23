@@ -1,12 +1,13 @@
 use core::ptr::null_mut;
 
 use jni::errors::jni_error_code_to_result;
-use jni::sys::jint;
+use jni::sys::{jclass, jint};
 use jni::JavaVM;
 
 use jni_jvmti_sys::{jvmtiEnv, jvmtiEventCallbacks, jvmtiInterface_1_, JVMTI_VERSION_1_1};
 
 use crate::event::{EventCallbacks, EventScope, EventType};
+use crate::memory::{AllocatedArray, LocalRef};
 use crate::util::*;
 use core::ffi::c_void;
 use jni_jvmti_sys::jvmtiEventMode::{JVMTI_DISABLE, JVMTI_ENABLE};
@@ -14,6 +15,7 @@ use std::marker::PhantomData;
 
 /// Shared across threads.
 /// TODO how to dispose via RAII?
+#[derive(Clone)]
 #[repr(transparent)]
 pub struct JvmtiEnv<'a>(*mut jvmtiEnv, PhantomData<&'a ()>);
 
@@ -90,11 +92,35 @@ impl<'a> JvmtiEnv<'a> {
         Ok(())
     }
 
-    pub fn get_loaded_classes(&self) {}
+    // TODO fix lifetimes?
+    pub fn get_loaded_classes<'b>(
+        &'b self,
+        jni: jni::JNIEnv<'b>,
+    ) -> JvmtiResult<AllocatedArray<'b, LocalRef>> {
+        let mut count: jint = 0;
+        let mut classes: *mut jclass = null_mut();
+        jvmti_method!(
+            self,
+            GetLoadedClasses,
+            &mut count as *mut jint,
+            &mut classes as *mut *mut jclass
+        );
+        debug!("got {} loaded classes", count);
+
+        Ok(unsafe { AllocatedArray::<LocalRef>::new(classes, count as usize, jni, self.clone()) })
+    }
 
     pub fn dispose(self) -> JvmtiResult<()> {
         jvmti_method!(self, DisposeEnvironment);
         debug!("disposed jvmti environment at {:?}", self.0);
+        Ok(())
+    }
+
+    /// # Safety
+    /// Pointer must be a JVMTI allocation
+    pub unsafe fn deallocate(&self, ptr: *mut ()) -> JvmtiResult<()> {
+        debug!("deallocating {:?}", ptr);
+        jvmti_method!(self, Deallocate, ptr as *mut _);
         Ok(())
     }
 

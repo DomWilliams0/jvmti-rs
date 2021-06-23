@@ -5,6 +5,7 @@ use log::LevelFilter;
 pub fn new_jvm() -> JavaVM {
     let _ = env_logger::builder()
         .filter_level(LevelFilter::Trace)
+        .filter_module("jni", LevelFilter::Info)
         .is_test(true)
         .try_init();
 
