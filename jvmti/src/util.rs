@@ -40,3 +40,21 @@ pub fn jvmti_err_to_result(err: jvmtiError) -> Result<(), JvmtiError> {
         err => Other(err),
     })
 }
+
+macro_rules! jvmti_method {
+            ($jvmti:expr, $name:ident $(, $args:expr )* ) => {{
+                let fn_ptr = $jvmti.as_ref()
+                    .$name
+                    .ok_or(Error::NullFunction(stringify!($name)))?;
+
+                log::trace!("calling jvmti function {}", stringify!($name));
+                let ret = unsafe {
+                    fn_ptr($jvmti.as_ptr(), $($args),*)
+                };
+
+                log::trace!("jvmti function {} returned {:?}", stringify!($name), ret);
+
+                jvmti_err_to_result(ret)?;
+
+            }};
+        }

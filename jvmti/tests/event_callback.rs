@@ -40,5 +40,7 @@ fn event_callback() {
     assert!(
         unsafe { CALLBACK_HIT },
         "class load event callback not called"
-    )
+    );
+
+    jvmti.dispose().expect("dispose failed");
 }

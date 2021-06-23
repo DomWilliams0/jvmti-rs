@@ -10,11 +10,14 @@ use crate::event::{EventCallbacks, EventScope, EventType};
 use crate::util::*;
 use core::ffi::c_void;
 use jni_jvmti_sys::jvmtiEventMode::{JVMTI_DISABLE, JVMTI_ENABLE};
+use std::marker::PhantomData;
 
+/// Shared across threads.
+/// TODO how to dispose via RAII?
 #[repr(transparent)]
-pub struct JvmtiEnv(*mut jvmtiEnv);
+pub struct JvmtiEnv<'a>(*mut jvmtiEnv, PhantomData<&'a ()>);
 
-impl JvmtiEnv {
+impl<'a> JvmtiEnv<'a> {
     pub fn from_jvm(jvm: &JavaVM) -> JvmtiResult<Self> {
         let jvm_ptr = jvm.get_java_vm_pointer();
         let mut jvmti_ptr: *mut c_void = null_mut();
@@ -38,26 +41,17 @@ impl JvmtiEnv {
 
         assert!(!jvmti_ptr.is_null());
         debug!("got jvmtiEnv ptr {:?}", jvmti_ptr);
-        Ok(Self(jvmti_ptr as *mut jvmtiEnv))
+        Ok(Self(jvmti_ptr as *mut jvmtiEnv, PhantomData))
     }
 
     /// Note events must be enabled to be fired
     pub fn install_event_callbacks(&self, callbacks: &EventCallbacks) -> JvmtiResult<()> {
-        // TODO macro for function calling
-        let fn_ptr = self
-            .as_ref()
-            .SetEventCallbacks
-            .ok_or(Error::NullFunction("SetEventCallbacks"))?;
-
-        let ret = unsafe {
-            fn_ptr(
-                self.0,
-                callbacks.into(),
-                core::mem::size_of::<jvmtiEventCallbacks>() as jint,
-            )
-        };
-
-        jvmti_err_to_result(ret)?;
+        jvmti_method!(
+            self,
+            SetEventCallbacks,
+            callbacks.into(),
+            core::mem::size_of::<jvmtiEventCallbacks>() as jint
+        );
 
         debug!("installed event callbacks: {:?}", callbacks);
         Ok(())
@@ -77,25 +71,16 @@ impl JvmtiEnv {
         scope: EventScope,
         enabled: bool,
     ) -> JvmtiResult<()> {
-        // TODO macro for function calling
-        let fn_ptr = self
-            .as_ref()
-            .SetEventNotificationMode
-            .ok_or(Error::NullFunction("SetEventNotificationMode"))?;
-
-        let ret = unsafe {
-            fn_ptr(
-                self.0,
-                if enabled { JVMTI_ENABLE } else { JVMTI_DISABLE },
-                ty.into(),
-                match scope {
-                    EventScope::Global => null_mut(),
-                    EventScope::Thread(thread) => thread,
-                },
-            )
-        };
-
-        jvmti_err_to_result(ret)?;
+        jvmti_method!(
+            self,
+            SetEventNotificationMode,
+            if enabled { JVMTI_ENABLE } else { JVMTI_DISABLE },
+            ty.into(),
+            match scope {
+                EventScope::Global => null_mut(),
+                EventScope::Thread(thread) => thread,
+            }
+        );
         debug!(
             "{}abled event type {:?} in scope {:?}",
             if enabled { "en" } else { "dis" }, // lol
@@ -105,8 +90,21 @@ impl JvmtiEnv {
         Ok(())
     }
 
-    fn as_ref(&self) -> &jvmtiInterface_1_ {
+    pub fn get_loaded_classes(&self) {}
+
+    pub fn dispose(self) -> JvmtiResult<()> {
+        jvmti_method!(self, DisposeEnvironment);
+        debug!("disposed jvmti environment at {:?}", self.0);
+        Ok(())
+    }
+
+    pub(crate) fn as_ref(&self) -> &jvmtiInterface_1_ {
         debug_assert!(!self.0.is_null());
         unsafe { &**self.0 }
+    }
+
+    pub(crate) fn as_ptr(&self) -> *mut jvmtiEnv {
+        debug_assert!(!self.0.is_null());
+        self.0
     }
 }
