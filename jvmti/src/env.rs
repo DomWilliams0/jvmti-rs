@@ -1,7 +1,7 @@
 use core::ptr::null_mut;
 
 use jni::errors::jni_error_code_to_result;
-use jni::sys::{jchar, jclass, jint, jlong, jvalue};
+use jni::sys::{jchar, jclass, jint, jlong, jobject, jvalue};
 use jni::JavaVM;
 
 use crate::event::{EventCallbacks, EventScope, EventType};
@@ -21,6 +21,7 @@ use jni_jvmti_sys::{
 use std::marker::PhantomData;
 use std::mem::MaybeUninit;
 
+use std::convert::TryFrom;
 use widestring::U16Str;
 
 /// Shared across threads.
@@ -163,7 +164,7 @@ impl<'a> JvmtiEnv<'a> {
         &self,
         heap_filter: HeapFilterFlags,
         instanceof: Option<jclass>,
-        mut callback: impl FnMut(&HeapIterationCallback) -> HeapVisitControlFlags,
+        mut callback: impl FnMut(HeapIterationCallback) -> HeapVisitControlFlags,
     ) -> JvmtiResult<()> {
         unsafe extern "C" fn heap_iteration_callback(
             class_tag: jlong,
@@ -172,7 +173,7 @@ impl<'a> JvmtiEnv<'a> {
             length: jint,
             user_data: *mut c_void,
         ) -> jint {
-            let closure: &mut &mut dyn FnMut(&HeapIterationCallback) -> HeapVisitControlFlags =
+            let closure: &mut &mut dyn FnMut(HeapIterationCallback) -> HeapVisitControlFlags =
                 &mut *(user_data as *mut &mut _);
 
             let class_tag = NonZeroJlong::new(class_tag);
@@ -189,7 +190,7 @@ impl<'a> JvmtiEnv<'a> {
                 tag,
                 array_length,
             };
-            closure(&arg).bits()
+            closure(arg).bits()
         }
 
         unsafe extern "C" fn primitive_field_callback(
@@ -204,7 +205,7 @@ impl<'a> JvmtiEnv<'a> {
             use jvmtiHeapReferenceKind::*;
             use jvmtiPrimitiveType::*;
 
-            let closure: &mut &mut dyn FnMut(&HeapIterationCallback) -> HeapVisitControlFlags =
+            let closure: &mut &mut dyn FnMut(HeapIterationCallback) -> HeapVisitControlFlags =
                 &mut *(user_data as *mut &mut _);
 
             let field_type = match kind {
@@ -234,7 +235,7 @@ impl<'a> JvmtiEnv<'a> {
                 object_tag,
                 value,
             };
-            closure(&arg).bits()
+            closure(arg).bits()
         }
 
         unsafe extern "C" fn primitive_array_callback(
@@ -246,7 +247,7 @@ impl<'a> JvmtiEnv<'a> {
             elements: *const c_void,
             user_data: *mut c_void,
         ) -> jint {
-            let closure: &mut &mut dyn FnMut(&HeapIterationCallback) -> HeapVisitControlFlags =
+            let closure: &mut &mut dyn FnMut(HeapIterationCallback) -> HeapVisitControlFlags =
                 &mut *(user_data as *mut &mut _);
 
             let class_tag = NonZeroJlong::new(class_tag);
@@ -262,7 +263,7 @@ impl<'a> JvmtiEnv<'a> {
                 tag,
                 elements,
             };
-            closure(&arg).bits()
+            closure(arg).bits()
         }
 
         unsafe extern "C" fn string_callback(
@@ -273,7 +274,7 @@ impl<'a> JvmtiEnv<'a> {
             value_length: jint,
             user_data: *mut ::core::ffi::c_void,
         ) -> jint {
-            let closure: &mut &mut dyn FnMut(&HeapIterationCallback) -> HeapVisitControlFlags =
+            let closure: &mut &mut dyn FnMut(HeapIterationCallback) -> HeapVisitControlFlags =
                 &mut *(user_data as *mut &mut _);
 
             let class_tag = NonZeroJlong::new(class_tag);
@@ -288,7 +289,7 @@ impl<'a> JvmtiEnv<'a> {
                 tag,
                 value,
             };
-            closure(&arg).bits()
+            closure(arg).bits()
         }
 
         let raw_callbacks = jvmtiHeapCallbacks {
@@ -313,6 +314,40 @@ impl<'a> JvmtiEnv<'a> {
         );
 
         Ok(())
+    }
+
+    pub fn get_objects_with_tag(
+        &self,
+        tag: jlong,
+        jni: jni::JNIEnv<'a>,
+    ) -> JvmtiResult<AllocatedArray<LocalRef>> {
+        let tags = [tag];
+        self.get_objects_with_tags(&tags, jni)
+    }
+
+    // TODO generic param to also return array of tag results
+    pub fn get_objects_with_tags(
+        &self,
+        tags: &[jlong],
+        jni: jni::JNIEnv<'a>,
+    ) -> JvmtiResult<AllocatedArray<LocalRef>> {
+        let tag_count = jint::try_from(tags.len()).expect("too many tags)");
+
+        let mut obj_count: jint = 0;
+        let mut obj_array = null_mut();
+        jvmti_method!(
+            self,
+            GetObjectsWithTags,
+            tag_count,
+            tags.as_ptr(),
+            &mut obj_count as *mut jint,
+            (&mut obj_array) as *mut *mut jobject,
+            null_mut()
+        );
+
+        Ok(unsafe {
+            AllocatedArray::<LocalRef>::new(obj_array, obj_count as usize, jni, self.clone())
+        })
     }
 
     pub fn dispose(self) -> JvmtiResult<()> {
