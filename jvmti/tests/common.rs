@@ -11,6 +11,8 @@ pub fn new_jvm() -> JavaVM {
 
     let jvm_args = InitArgsBuilder::new()
         .version(JNIVersion::V8)
+        .option("-Djava.compiler=NONE")
+        .option("-Xint")
         .build()
         .expect("failed to create jvm args");
 
