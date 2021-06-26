@@ -9,7 +9,7 @@ use crate::heap::{
     FieldType, HeapFilterFlags, HeapIterationCallback, HeapVisitControlFlags, NonZeroJlong,
     PrimitiveArray, U16StrPrintable,
 };
-use crate::memory::{AllocatedArray, LocalRef};
+use crate::memory::{AllocatedArray, AllocatedMutf8, LocalRef};
 use crate::util::*;
 use core::ffi::c_void;
 use jni::objects::JValue;
@@ -22,6 +22,7 @@ use std::marker::PhantomData;
 use std::mem::MaybeUninit;
 
 use std::convert::TryFrom;
+use std::os::raw::c_char;
 use widestring::U16Str;
 
 /// Shared across threads.
@@ -348,6 +349,21 @@ impl<'a> JvmtiEnv<'a> {
         Ok(unsafe {
             AllocatedArray::<LocalRef>::new(obj_array, obj_count as usize, jni, self.clone())
         })
+    }
+
+    // TODO generic param to optionally get generic signature too
+    pub fn get_class_signature(&self, class: jclass) -> JvmtiResult<AllocatedMutf8> {
+        let mut jni_sig: *mut c_char = null_mut();
+        jvmti_method!(
+            self,
+            GetClassSignature,
+            class,
+            (&mut jni_sig) as *mut *mut c_char,
+            null_mut()
+        );
+
+        assert!(!jni_sig.is_null());
+        Ok(unsafe { AllocatedMutf8::new(jni_sig, self.clone()) })
     }
 
     pub fn dispose(self) -> JvmtiResult<()> {

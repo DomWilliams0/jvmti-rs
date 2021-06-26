@@ -25,6 +25,9 @@ fn loaded_classes() {
     {
         let loaded_classes = jvmti.get_loaded_classes(*jni).expect("failed");
         for cls in &*loaded_classes {
+            let sig = jvmti.get_class_signature(*cls).expect("failed to get sig");
+            log::debug!("class: {:?}", sig.to_str());
+
             let cls = JClass::from(*cls);
             if jni
                 .call_method_unchecked(
