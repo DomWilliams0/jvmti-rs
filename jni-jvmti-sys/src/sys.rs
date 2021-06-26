@@ -706,7 +706,7 @@ pub struct jvmtiAddrLocationMap {
 
 #[repr(C)]
 #[repr(align(4))]
-#[derive(Debug, Copy, Clone)]
+#[derive(Default, Debug, Copy, Clone)]
 pub struct jvmtiCapabilities {
     pub _bitfield_align_1: [u8; 0],
     pub _bitfield_1: __BindgenBitfieldUnit<[u8; 16usize]>,

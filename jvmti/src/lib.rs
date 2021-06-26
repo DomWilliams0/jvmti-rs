@@ -4,6 +4,7 @@
 #[macro_use]
 mod util;
 
+mod capability;
 mod env;
 mod event;
 mod memory;

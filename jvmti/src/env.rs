@@ -4,7 +4,9 @@ use jni::errors::jni_error_code_to_result;
 use jni::sys::{jclass, jint};
 use jni::JavaVM;
 
-use jni_jvmti_sys::{jvmtiEnv, jvmtiEventCallbacks, jvmtiInterface_1_, JVMTI_VERSION_1_1};
+use jni_jvmti_sys::{
+    jvmtiCapabilities, jvmtiEnv, jvmtiEventCallbacks, jvmtiInterface_1_, JVMTI_VERSION_1_1,
+};
 
 use crate::event::{EventCallbacks, EventScope, EventType};
 use crate::memory::{AllocatedArray, LocalRef};
@@ -12,6 +14,7 @@ use crate::util::*;
 use core::ffi::c_void;
 use jni_jvmti_sys::jvmtiEventMode::{JVMTI_DISABLE, JVMTI_ENABLE};
 use std::marker::PhantomData;
+use std::mem::MaybeUninit;
 
 /// Shared across threads.
 /// TODO how to dispose via RAII?
@@ -19,6 +22,9 @@ use std::marker::PhantomData;
 #[repr(transparent)]
 pub struct JvmtiEnv<'a>(*mut jvmtiEnv, PhantomData<&'a ()>);
 
+// TODO expose a low-level direct api to jvmti, then a higher-level api for ergonomic use
+//  e.g. capability builder that checks potential and automatically relinquishes/requests
+//  direct(*mut jvmtiEnv), ergonomic(direct), ergonomic.into_inner()
 impl<'a> JvmtiEnv<'a> {
     pub fn from_jvm(jvm: &JavaVM) -> JvmtiResult<Self> {
         let jvm_ptr = jvm.get_java_vm_pointer();
@@ -108,6 +114,42 @@ impl<'a> JvmtiEnv<'a> {
         debug!("got {} loaded classes", count);
 
         Ok(unsafe { AllocatedArray::<LocalRef>::new(classes, count as usize, jni, self.clone()) })
+    }
+
+    pub fn get_potential_capabilities(&self) -> JvmtiResult<jvmtiCapabilities> {
+        let mut cap = MaybeUninit::<jvmtiCapabilities>::zeroed();
+        jvmti_method!(self, GetPotentialCapabilities, cap.as_mut_ptr());
+        let capabilities = unsafe { cap.assume_init() };
+        debug!("potential capabilities: {:?}", capabilities);
+        Ok(capabilities)
+    }
+
+    pub fn get_capabilities(&self) -> JvmtiResult<jvmtiCapabilities> {
+        let mut cap = MaybeUninit::<jvmtiCapabilities>::zeroed();
+        jvmti_method!(self, GetCapabilities, cap.as_mut_ptr());
+        let capabilities = unsafe { cap.assume_init() };
+        debug!("active capabilities: {:?}", capabilities);
+        Ok(capabilities)
+    }
+
+    pub fn add_capabilities(&self, capabilities: &jvmtiCapabilities) -> JvmtiResult<()> {
+        jvmti_method!(
+            self,
+            AddCapabilities,
+            capabilities as *const jvmtiCapabilities
+        );
+        debug!("added capabilities {:?}", capabilities);
+        Ok(())
+    }
+
+    pub fn relinquish_capabilities(&self, capabilities: &jvmtiCapabilities) -> JvmtiResult<()> {
+        jvmti_method!(
+            self,
+            RelinquishCapabilities,
+            capabilities as *const jvmtiCapabilities
+        );
+        debug!("relinquished capabilities {:?}", capabilities);
+        Ok(())
     }
 
     pub fn dispose(self) -> JvmtiResult<()> {
